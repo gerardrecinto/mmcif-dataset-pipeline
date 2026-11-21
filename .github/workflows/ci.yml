@@ -21,3 +21,7 @@ jobs:
           python -m mmcifds build in out
           python -m mmcifds build in out | grep '"skipped": 1'
           python -m mmcifds stats out
+      - name: Eval gate on the bundled entries
+        run: |
+          python -m mmcifds eval tests/data results.jsonl
+          python -m mmcifds gate results.jsonl --baseline evals/baseline.json
