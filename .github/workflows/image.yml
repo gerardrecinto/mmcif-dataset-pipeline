@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t mmcifds:ci .
-      - name: Run as the Job does: non-root, read-only root filesystem, no capabilities
+      - name: "Run as the Job does (non-root, read-only root filesystem, no capabilities)"
         run: |
           mkdir -p /tmp/mnt/cif /tmp/mnt/out && cp tests/data/1CRN.cif /tmp/mnt/cif/ && chmod -R 777 /tmp/mnt
           docker run --rm --user 10001 --read-only --cap-drop ALL -v /tmp/mnt:/data \
