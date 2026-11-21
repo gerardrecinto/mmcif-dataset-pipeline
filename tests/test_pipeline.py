@@ -47,3 +47,16 @@ def test_cli_exit_codes(tmp_path, capsys):
     assert main(["build", str(tmp_path / "in"), str(tmp_path / "out"), "--shard", "3", "--num-shards", "2"]) == 2
     line = json.loads(capsys.readouterr().out.splitlines()[0])
     assert line["done"] == 1
+
+
+def test_unwritable_output_is_a_message_not_a_traceback(tmp_path, capsys):
+    src = tmp_path / "in"
+    src.mkdir()
+    shutil.copy(DATA / "1CRN.cif", src / "1CRN.cif")
+    blocker = tmp_path / "file"
+    blocker.write_text("x")
+    assert main(["build", str(src), str(blocker / "out")]) == 2
+    err = capsys.readouterr().err
+    assert "writable volume" in err and "Traceback" not in err
+    assert main(["build", str(tmp_path / "nope"), str(tmp_path / "out")]) == 2
+    assert not (tmp_path / "out").exists()

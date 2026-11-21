@@ -1,0 +1,13 @@
+LICENSE
+README.md
+pyproject.toml
+mmcifds/__init__.py
+mmcifds/__main__.py
+mmcifds/parse.py
+mmcifds/pipeline.py
+mmcifds.egg-info/PKG-INFO
+mmcifds.egg-info/SOURCES.txt
+mmcifds.egg-info/dependency_links.txt
+mmcifds.egg-info/entry_points.txt
+mmcifds.egg-info/top_level.txt
+tests/test_pipeline.py

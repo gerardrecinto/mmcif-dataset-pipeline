@@ -14,8 +14,16 @@ spec:
       restartPolicy: Never
       containers:
         - name: build
-          image: python:3.12-slim
-          # Pin your own image by digest and copy this package into it for a private registry.
+          # Build the Dockerfile at the repo root, push it to your registry, and put that tag here
+          # (a private registry also needs imagePullSecrets under the pod spec). The stock python
+          # image does not contain this package.
+          image: registry.example.com/mmcifds:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
           command: ["python3", "-m", "mmcifds", "build", "/data/cif", "/data/out"]
           env:
             - {name: NUM_SHARDS, value: "8"}
