@@ -1,0 +1,25 @@
+name: templates
+# Checks the SLURM and Kubernetes templates without a cluster.
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  templates:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest pyyaml
+      - name: Run the templates the way the schedulers do
+        run: python -m pytest -q tests/test_templates.py
+      - name: shellcheck the sbatch script
+        run: shellcheck deploy/slurm/build.sbatch
+      - name: Kubernetes schema check (kubeconform 0.8.0, API 1.30)
+        run: |
+          docker run --rm -v "$PWD":/w ghcr.io/yannh/kubeconform:v0.8.0 \
+            -strict -summary -kubernetes-version 1.30.0 /w/deploy/k8s/job.yaml
