@@ -34,10 +34,11 @@ def build(src, out, index=0, count=1, min_len=1):
     """
     src, out = Path(src), Path(out)
     rec_dir, fail_dir = out / "records", out / "failed"
+    # List the inputs first so a wrong input folder is reported before any output folder is created.
+    files = sorted(p for p in src.iterdir() if p.suffix.lower() == ".cif" and in_shard(p.name, index, count))
     rec_dir.mkdir(parents=True, exist_ok=True)
     fail_dir.mkdir(parents=True, exist_ok=True)
     stats = {"done": 0, "skipped": 0, "failed": 0, "chains": 0}
-    files = sorted(p for p in src.iterdir() if p.suffix.lower() == ".cif" and in_shard(p.name, index, count))
     for p in files:
         rec, fail = rec_dir / f"{p.stem}.jsonl", fail_dir / f"{p.stem}.txt"
         if rec.exists():

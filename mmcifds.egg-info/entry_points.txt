@@ -1,0 +1,2 @@
+[console_scripts]
+mmcifds = mmcifds.__main__:main

@@ -1,0 +1,20 @@
+name: image
+# Builds the container the Kubernetes Job runs and runs it with the Job's security settings.
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  image:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t mmcifds:ci .
+      - name: "Run as the Job does (non-root, read-only root filesystem, no capabilities)"
+        run: |
+          mkdir -p /tmp/mnt/cif /tmp/mnt/out && cp tests/data/1CRN.cif /tmp/mnt/cif/ && chmod -R 777 /tmp/mnt
+          docker run --rm --user 10001 --read-only --cap-drop ALL -v /tmp/mnt:/data \
+            -e JOB_COMPLETION_INDEX=0 -e NUM_SHARDS=1 mmcifds:ci python3 -m mmcifds build /data/cif /data/out
+          docker run --rm --user 10001 --read-only -v /tmp/mnt:/data mmcifds:ci mmcifds stats /data/out | grep '"residues": 46'

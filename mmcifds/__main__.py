@@ -29,8 +29,14 @@ def main(argv=None):
         return 2
     try:
         st = build(a.src, a.out, idx, cnt, a.min_len)
-    except FileNotFoundError:
-        print(f"mmcifds: {a.src} not found. Pass the folder that holds your .cif files.", file=sys.stderr)
+    except FileNotFoundError as e:
+        if e.filename and str(e.filename) != str(a.src):
+            print(f"mmcifds: cannot create {e.filename}. Pass an output folder on a writable volume.", file=sys.stderr)
+        else:
+            print(f"mmcifds: {a.src} not found. Pass the folder that holds your .cif files.", file=sys.stderr)
+        return 2
+    except OSError as e:
+        print(f"mmcifds: cannot use {e.filename or a.out} ({e.strerror}). Pass an output folder on a writable volume.", file=sys.stderr)
         return 2
     print(json.dumps({"shard": idx, "of": cnt, **st}))
     if st["failed"]:
