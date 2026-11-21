@@ -1,0 +1,29 @@
+# Indexed Job: one pod per shard. Set completions, parallelism and NUM_SHARDS to the same number.
+# Mount your data at /data. Reapplying after a failure resumes; finished files are skipped.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mmcifds-build
+spec:
+  completionMode: Indexed
+  completions: 8
+  parallelism: 8
+  backoffLimitPerIndex: 3
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: build
+          image: python:3.12-slim
+          # Pin your own image by digest and copy this package into it for a private registry.
+          command: ["python3", "-m", "mmcifds", "build", "/data/cif", "/data/out"]
+          env:
+            - {name: NUM_SHARDS, value: "8"}
+          resources:
+            requests: {cpu: "1", memory: 2Gi}
+            limits: {memory: 4Gi}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: mmcif-data}
