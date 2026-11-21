@@ -17,7 +17,7 @@ Each finished file leaves `out/records/<id>.jsonl`. A file that cannot be parsed
 ## Scale out
 
 - SLURM: `sbatch --array=0-15 deploy/slurm/build.sbatch /data/cif /data/out`
-- Kubernetes: edit `completions` and `NUM_SHARDS` in `deploy/k8s/job.yaml`, then `kubectl apply -f`
+- Kubernetes: build and push the image, then in `deploy/k8s/job.yaml` set `image`, and set `completions` and `NUM_SHARDS` to the same number. Then `kubectl apply -f deploy/k8s/job.yaml`. Without a pushed image the pods stay in `ImagePullBackOff`.
 - Anywhere else: `--shard I --num-shards N`
 
 A file belongs to shard `crc32(name) % N`, so every file is handled by exactly one task. To roll back, delete `out/`; inputs are never modified.
