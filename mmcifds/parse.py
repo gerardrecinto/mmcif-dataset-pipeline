@@ -12,29 +12,48 @@ class ParseError(ValueError):
     pass
 
 
-def atom_rows(text):
-    """Yield one dict per row of the _atom_site loop."""
+def loop_rows(text, category):
+    """Yield one dict per row of a looped category such as "_atom_site." (empty if there is no such loop)."""
     lines = iter(text.splitlines())
     for line in lines:
         if line.strip() != "loop_":
             continue
         cols = []
         for line in lines:
-            if line.startswith("_atom_site."):
-                cols.append(line.split(".", 1)[1].strip())
+            if line.startswith("_"):
+                cols.append(line.split(".", 1)[1].strip() if line.startswith(category) else None)
             else:
                 break
-        if not cols:
+        if not cols or cols[0] is None:
             continue
         while True:
             if not line.strip() or line.startswith(("#", "_", "loop_", "data_")):
                 return
             vals = shlex.split(line)
             if len(vals) != len(cols):
-                raise ParseError(f"atom_site row has {len(vals)} values, expected {len(cols)}: {line[:60]!r}")
+                raise ParseError(f"{category} row has {len(vals)} values, expected {len(cols)}: {line[:60]!r}")
             yield dict(zip(cols, vals))
             line = next(lines, "")
-    raise ParseError("no _atom_site loop found")
+
+
+def atom_rows(text):
+    """Yield one dict per row of the _atom_site loop."""
+    yield from loop_rows(text, "_atom_site.")
+
+
+def entity_sequences(text):
+    """Return {entity_id: one-letter sequence} from the _entity_poly_seq loop."""
+    seqs = {}
+    for r in loop_rows(text, "_entity_poly_seq."):
+        seqs.setdefault(r["entity_id"], []).append(AA.get(r["mon_id"], "X"))
+    if not seqs:
+        raise ParseError("no _entity_poly_seq loop found")
+    return {k: "".join(v) for k, v in seqs.items()}
+
+
+def chain_entities(text):
+    """Return {chain_id: entity_id} for chains that have ATOM records."""
+    return {r["label_asym_id"]: r["label_entity_id"] for r in atom_rows(text) if r.get("group_PDB") == "ATOM"}
 
 
 def chains(text):

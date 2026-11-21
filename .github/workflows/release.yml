@@ -1,0 +1,58 @@
+name: release
+# build the dataset, evaluate it, and publish only if no case that passed before fails now.
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m mmcifds build tests/data out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: records
+          path: out/records
+  evaluate:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m mmcifds eval tests/data results.jsonl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: results.jsonl
+  gate:
+    needs: evaluate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: eval-results
+      - name: Block on regressions against evals/baseline.json
+        run: python -m mmcifds gate results.jsonl --baseline evals/baseline.json
+  publish:
+    needs: [build, gate]
+    runs-on: ubuntu-24.04
+    environment: production
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: records
+          path: records
+      # Replace this step with your push to a bucket or registry. It only runs when the gate is open.
+      - run: ls -l records
