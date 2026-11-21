@@ -18,6 +18,8 @@ Each finished file leaves `out/records/<id>.jsonl`. A file that cannot be parsed
 - Kubernetes: edit `completions` and `NUM_SHARDS` in `deploy/k8s/job.yaml`, then `kubectl apply -f`
 - Anywhere else: `--shard I --num-shards N`
 
+CI runs the sbatch script and the Job's environment with each array index and checks that every input is built exactly once, validates `deploy/k8s/job.yaml` against the Kubernetes 1.30 schema with kubeconform, and shellchecks the sbatch script. None of it ran on a real SLURM or Kubernetes cluster. `completions` must equal `NUM_SHARDS`: with 4 pods and 8 shards, only 20 of 40 test files were built and the rest were silently left, so the test fails on a mismatch.
+
 A file belongs to shard `crc32(name) % N`, so every file is handled by exactly one task. To roll back, delete `out/`; inputs are never modified.
 
 ## What it does not do yet
